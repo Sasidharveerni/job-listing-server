@@ -1,6 +1,6 @@
 const validateNewUser = (req, res, next) => {
-    const {name, email, password} = req.body;
-    if(!name || !email || !password) {
+    const {name, email, isRecruiter, password} = req.body;
+    if(!name || !email || !password || !isRecruiter) {
         res.status(401).json({
             status: 'Failed',
             message: 'Please provide all the fields'
@@ -16,4 +16,22 @@ const validateNewUser = (req, res, next) => {
     next();
 }
 
-module.exports = validateNewUser;
+const ensureRecruiter = (req, res, next) => {
+    if (req.user && req.user.isRecruiter) {
+        next();
+    } else {
+        res.status(403).json({status: 'Failed', message: 'Access denied. Recruiters only.' });
+    }
+};
+
+const ensureCandidate = (req, res, next) => {
+    if (req.user && !req.user.isRecruiter) {
+        next();
+    } else {
+        res.status(403).json({status: 'Failed', message: 'Access denied. Candidates only.' });
+    }
+};
+
+
+
+module.exports = {validateNewUser, ensureCandidate, ensureRecruiter};

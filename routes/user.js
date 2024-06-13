@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../models/user');
-const validateNewUser = require('../middlewares/validateNewUser');
+const {validateNewUser} = require('../middlewares/validateNewUser');
 
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.get('/data', async (req, res) => {
 
 router.post('/register', validateNewUser, async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, isRecruiter } = req.body;
         const existingUser = await user.findOne({ email: email })
         if (existingUser) {
             return res.status(501).json({
@@ -45,7 +45,8 @@ router.post('/register', validateNewUser, async (req, res) => {
             const newUser = new user({
                 name,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                isRecruiter
             })
 
             await newUser.save();   // handle the case where users with same email-id should not be able register again
@@ -72,11 +73,12 @@ router.post('/login', async (req, res) => {
         if (existingUser) {
             const passwordmatch = await bcrypt.compare(password, existingUser.password);
             if (passwordmatch) {
-                const token = jwt.sign({email: existingUser.email}, 'secretkey', {expiresIn: '7h'})  // takes 3 arguments 1-payload, 2-It's a secret key to encrypt 3-it expiresIn - 30s
+                const token = jwt.sign({id: existingUser._id, email: existingUser.email}, 'secretkey', {expiresIn: '7h'})  // takes 3 arguments 1-payload, 2-It's a secret key to encrypt 3-it expiresIn - 30s
                 return res.status(200).json({
                     status: 'Success',
                     message: 'User logged in successfully',
-                    token: token
+                    token: token,
+                    user: existingUser
                 })
             }
             else {

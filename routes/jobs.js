@@ -1,7 +1,9 @@
 const express = require('express')
 const Job = require('../models/jobs');
+const user = require('../models/user');
 const validateNewJob = require('../middlewares/validateNewJob');
 const verifyToken = require('../middlewares/verifyToken');
+const {ensureCandidate, ensureRecruiter} = require('../middlewares/validateNewUser')
 
 
 
@@ -62,6 +64,24 @@ router.get('/job/:jobId', async (req, res) => {
     }
 })
 
+router.post('/apply/:jobId', verifyToken, ensureCandidate, async (req, res) => {
+    try {
+        const {jobId} = req.params;
+        // console.log(jobId)
+        const job = await Job.findById(jobId);
+        // console.log(job)
+        if (!job) {
+            return res.status(404).json({status: 'Failed', message: 'Job not found' });
+        }
+        // console.log(req.user)
+        req.user.appliedJobs.push(job._id);
+        await req.user.save();
+        res.status(200).json({status: 'Success', message: 'Applied to job successfully', job });
+    } catch (error) {
+        res.status(500).json({status: 'Failed', message: 'Error applying to job', error: error });
+    }
+});
+
 router.get('/jobs', getJobsWithTimestamps, async (req, res) => {
     try {
         const jobData = req.jobsWithTimestamps;
@@ -77,7 +97,7 @@ router.get('/jobs', getJobsWithTimestamps, async (req, res) => {
     }
 })
 
-router.post('/add',verifyToken, validateNewJob, async (req, res, next) => {
+router.post('/add',verifyToken, validateNewJob, ensureRecruiter, async (req, res, next) => {
     try {
         const {companyName, logoUrl, jobPosition, monthlySalary, jobType, remote, location, jobDescription, aboutCompany, skillsRequired, additionalInformation} = req.body;
         const newJob = new Job({
@@ -98,7 +118,7 @@ router.post('/add',verifyToken, validateNewJob, async (req, res, next) => {
 })
 
 
-router.patch('/update/:id', async (req, res) => {
+router.patch('/update/:id',verifyToken, ensureRecruiter, async (req, res) => {
     try {
         const jobid = req.params.id;
 
@@ -139,7 +159,7 @@ router.patch('/update/:id', async (req, res) => {
 });
 
 
-router.delete('/job/delete/:id', async (req, res) => {
+router.delete('/job/delete/:id',verifyToken, ensureRecruiter, async (req, res) => {
     try {
         const {id} = req.params;
         await Job.findByIdAndDelete(id);

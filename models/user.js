@@ -13,7 +13,17 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    isRecruiter: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    appliedJobs: {
+        type: [mongoose.Schema.Types.ObjectId], // Array of job IDs
+        ref: 'Job',
+        default: [] // Only for candidates
     }
 });
 
-module.exports = mongoose.model('User', userSchema)
+module.exports = mongoose.model('User', userSchema);
