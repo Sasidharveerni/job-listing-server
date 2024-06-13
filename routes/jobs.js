@@ -28,7 +28,7 @@ const getJobsWithTimestamps = async (req, res, next) => {
     }
   };
 
-router.get('/', getFilteredJobs())
+router.get('/job/filter', getFilteredJobs())
 
 router.get('/user/login', verifyToken, async (req, res) => {
     try {
@@ -166,7 +166,7 @@ function getFilteredJobs() {
     return async (req, res) => {
 
         try {
-            const { minSalary, maxSalary, jobType, location, remote, skills } = req.query;
+            const { minSalary, maxSalary, jobType, jobPosition, location, remote, skills } = req.query;
             const skillsArray = skills ? skills.split(',') : [];
             const jobs = await Job.find(
                 {
@@ -174,6 +174,7 @@ function getFilteredJobs() {
                         $gte: minSalary || 0,
                         $lte: maxSalary || 999999999
                     },
+                    jobPosition: jobPosition || { $exists: true },
                     jobType: jobType || { $exists: true },
                     location: location || { $exists: true },
                     remote: remote == 'true' || { $exists: true },
