@@ -32,20 +32,7 @@ const getJobsWithTimestamps = async (req, res, next) => {
 
 router.get('/job/filter', getFilteredJobs())
 
-router.get('/user/login', verifyToken, async (req, res) => {
-    try {
-        res.status(200).json({
-            status: 'Success',
-            message: 'User logged in previously',
-           }) 
-    } catch (error) {
-        res.status(500).json({
-            status: 'Failed',
-            message: 'User not logged in, Please login!',
-            error: 'There is an error: ' + error
-           })
-    }
-});
+
 
 router.get('/job/:jobId', async (req, res) => {
     try {

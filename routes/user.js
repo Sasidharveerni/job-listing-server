@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../models/user');
 const {validateNewUser} = require('../middlewares/validateNewUser');
+const verifyToken = require('../middlewares/verifyToken');
 
 
 const router = express.Router();
@@ -29,6 +30,33 @@ router.get('/data', async (req, res) => {
         })
     }
 })
+
+router.post('/login/status', verifyToken, async (req, res) => {
+    try {
+        const {email} = req.body
+        const existingUser = await user.findOne({email: email})
+        if(existingUser) {
+            res.status(200).json({
+                status: 'Success',
+                message: 'User logged in previously',
+                user: existingUser
+               }) 
+        }
+         else {
+            res.status(200).json({
+                status: 'Success',
+                message: 'User logged in previously',
+                user: 'user not found'
+               }) 
+         }
+    } catch (error) {
+        res.status(500).json({
+            status: 'Failed',
+            message: 'User not logged in, Please login!',
+            error: 'There is an error: ' + error
+           })
+    }
+});
 
 router.post('/register', validateNewUser, async (req, res) => {
     try {
@@ -73,7 +101,7 @@ router.post('/login', async (req, res) => {
         if (existingUser) {
             const passwordmatch = await bcrypt.compare(password, existingUser.password);
             if (passwordmatch) {
-                const token = jwt.sign({id: existingUser._id, email: existingUser.email}, 'secretkey', {expiresIn: '7h'})  // takes 3 arguments 1-payload, 2-It's a secret key to encrypt 3-it expiresIn - 30s
+                const token = jwt.sign({id: existingUser._id, email: existingUser.email}, 'secretkey', {expiresIn: '7d'})  // takes 3 arguments 1-payload, 2-It's a secret key to encrypt 3-it expiresIn - 30s
                 return res.status(200).json({
                     status: 'Success',
                     message: 'User logged in successfully',
@@ -100,6 +128,33 @@ router.post('/login', async (req, res) => {
         })
     }
 })
+
+
+router.patch('/update/:id', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const { id } = req.params;
+
+        // Create an update object
+        const updateFields = {};
+        if (name) updateFields.name = name;
+        if (email) updateFields.email = email;
+        if (password) updateFields.password = await bcrypt.hash(password, 5);
+
+        // Perform the update
+        await user.findByIdAndUpdate(id, updateFields);
+
+        res.json({
+            status: 'Success',
+            message: 'Details updated successfully!'
+        });
+    } catch (error) {
+        res.status(501).json({
+            message: 'Something went wrong',
+            err: error
+        });
+    }
+});
 
 
 
